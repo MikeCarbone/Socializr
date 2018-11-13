@@ -8,9 +8,10 @@ class App extends Component {
     this.state = {
       followers: '',
       following: '',
+      tweetCount: '',
+      likeCount: ''
     };
     
-    this.refresher = this.refresher.bind(this);
     this.usernameEntered = this.usernameEntered.bind(this);
   }
 
@@ -19,12 +20,9 @@ class App extends Component {
   }
 
   usernameEntered(){
-
     let username = document.getElementById("twitter-user-js").value;
-    let followerCount;
-    
-    function readyStateCallback(req){
-      console.log('Ready state callback called');
+
+    const readyStateCallback = (req) => {
       console.log(req.readyState);
       if (req.readyState === 4) {
             var responseObject = JSON.parse(req.responseText);
@@ -37,36 +35,37 @@ class App extends Component {
       } else {
         return console.log('Invalid ready state');
       }
-    }
+    };
 
-    function fetchResults(theURL){
-          var Httpreq = new XMLHttpRequest();
-              Httpreq.open("GET",theURL,false);
-              Httpreq.send(null);
-          
-          var dataPayload = JSON.parse(Httpreq.responseText);
-          followerCount =  dataPayload[0].pageFunctionResult[2];
-          console.log('FOLLOWER COUNT: ', followerCount);
-          
-          return followerCount;
-    }
+    const fetchResults = (theURL) => {
+        var Httpreq = new XMLHttpRequest();
+            Httpreq.open("GET",theURL,false);
+            Httpreq.send(null);
+        console.log(Httpreq.responseText);
+        let dataPayload = JSON.parse(Httpreq.responseText);
+                
+        return this.setState({
+            followers: dataPayload[0].pageFunctionResult[2],
+            following: dataPayload[0].pageFunctionResult[1],
+            tweetCount: dataPayload[0].pageFunctionResult[0],
+            likeCount: dataPayload[0].pageFunctionResult[3]
+          });
+    };
 
-    function poller(requestId){
-        
+    const poller = (requestId) => {
         console.log('Original poll still runnning, executing long poller');
         
+        //Giving the API time to create response, keep checking
         setTimeout(function(){
           var request = new XMLHttpRequest();
               request.open('GET', `https://api.apify.com/v1/execs/${requestId}`);
               request.onreadystatechange = function(){ readyStateCallback(this)};
               request.send();
-
-        }, 1000);
-      }
+      }, 1000);
+    };
 
     //Validate field content
     if (username){
-
       var body = {
         '_id': 'yxCYAw3hon6qnebkN',
         'startUrls':[{
@@ -87,10 +86,6 @@ class App extends Component {
     }
   }
 
-  refresher(data){
-    this.setState({followers: data});
-  }
-
   render() {
     return (
       <div>
@@ -99,9 +94,9 @@ class App extends Component {
         <button onClick={this.usernameEntered}>Submit</button>
         <div className="stats">
           <p>Followers: {this.state.followers}</p>
-          <p></p>
-          <p></p>
-          <p></p>
+          <p>Following: {this.state.following}</p>
+          <p>Total tweets: {this.state.tweetCount}</p>
+          <p>Total likes: {this.state.likeCount}</p>
         </div>
       </div>
     );
