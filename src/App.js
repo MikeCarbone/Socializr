@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import Stats from './components/Stats';
 import './App.css';
 
 class App extends Component {
@@ -23,7 +24,6 @@ class App extends Component {
     let username = document.getElementById("twitter-user-js").value;
 
     const readyStateCallback = (req) => {
-      console.log(req.readyState);
       if (req.readyState === 4) {
             var responseObject = JSON.parse(req.responseText);
             var finishStatus = responseObject.finishedAt;
@@ -33,7 +33,8 @@ class App extends Component {
             //Check if results are ready to be requested
             return (finishStatus == null) ? poller(requestId) : fetchResults(resultsUrl);
       } else {
-        return console.log('Invalid ready state');
+        //Response not ready
+        return;
       }
     };
 
@@ -41,9 +42,9 @@ class App extends Component {
         var Httpreq = new XMLHttpRequest();
             Httpreq.open("GET",theURL,false);
             Httpreq.send(null);
-        console.log(Httpreq.responseText);
+        
         let dataPayload = JSON.parse(Httpreq.responseText);
-                
+
         return this.setState({
             followers: dataPayload[0].pageFunctionResult[2],
             following: dataPayload[0].pageFunctionResult[1],
@@ -92,12 +93,10 @@ class App extends Component {
         <h1 className="header">Socializr</h1>
         <input id="twitter-user-js" placeholder="Enter your Twitter user name here" type="text" />
         <button onClick={this.usernameEntered}>Submit</button>
-        <div className="stats">
-          <p>Followers: {this.state.followers}</p>
-          <p>Following: {this.state.following}</p>
-          <p>Total tweets: {this.state.tweetCount}</p>
-          <p>Total likes: {this.state.likeCount}</p>
-        </div>
+        <Stats  followers={this.state.followers} 
+                following={this.state.following} 
+                tweetCount={this.state.tweetCount} 
+                likeCount={this.state.likeCount} />
       </div>
     );
   }
