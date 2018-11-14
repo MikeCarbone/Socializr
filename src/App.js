@@ -7,21 +7,44 @@ class App extends Component {
     super(props);
     
     this.state = {
+      user: '',
       followers: '',
       following: '',
       tweetCount: '',
-      likeCount: ''
+      likeCount: '',
+      isEmpty: true,
+      isLoading: false,
+      nameEntered: false
     };
-    
+
     this.usernameEntered = this.usernameEntered.bind(this);
   }
 
-  componentDidMount(){
+  componentWillMount(){
     //Check local storage
+    let history = window.localStorage;
+    if (history.length <= 0){
+      console.log('Empty history');
+    } else {
+      this.setState({
+        user: history.user,
+        followers: history.followers,
+        following: history.following,
+        tweetCount: history.tweetCount,
+        likeCount: history.likeCount,
+        avatar: history.avatar,
+        isEmpty: JSON.parse(history.isEmpty),
+        isLoading: JSON.parse(history.isLoading)
+      });
+    }
   }
 
   usernameEntered(){
     let username = document.getElementById("twitter-user-js").value;
+    this.setState({
+      isLoading: true,
+      user: username
+    });
 
     const readyStateCallback = (req) => {
       if (req.readyState === 4) {
@@ -44,13 +67,10 @@ class App extends Component {
             Httpreq.send(null);
         
         let dataPayload = JSON.parse(Httpreq.responseText);
-
-        return this.setState({
-            followers: dataPayload[0].pageFunctionResult[2],
-            following: dataPayload[0].pageFunctionResult[1],
-            tweetCount: dataPayload[0].pageFunctionResult[0],
-            likeCount: dataPayload[0].pageFunctionResult[3]
-          });
+        console.log(dataPayload);
+        stateSetter(dataPayload);
+        
+        return editLocalHistory(this.state);
     };
 
     const poller = (requestId) => {
@@ -64,6 +84,24 @@ class App extends Component {
               request.send();
       }, 1000);
     };
+
+    const stateSetter = (data) => {
+      return this.setState({
+        followers: data[0].pageFunctionResult[3],
+        following: data[0].pageFunctionResult[2],
+        tweetCount: data[0].pageFunctionResult[1],
+        likeCount: data[0].pageFunctionResult[4],
+        avatar: data[0].pageFunctionResult[0],
+        isEmpty: false,
+        isLoading: false
+      });
+    }
+
+    const editLocalHistory = (states) => {
+      Object.keys(states).forEach((key) =>{
+          localStorage.setItem(key, states[key]);
+      });
+    }
 
     //Validate field content
     if (username){
@@ -88,15 +126,35 @@ class App extends Component {
   }
 
   render() {
+    var content = (this.state.isEmpty)
+                  ?  <div>
+                        <h2 className="placeholder-text">Please enter your Twitter handle to get started!</h2>
+                        <img className="placeholder-img" alt="Phone" src="./social-bg.png"/>
+                    </div>
+                  : <Stats  username={this.state.user} 
+                            pic={this.state.avatar} 
+                            followers={this.state.followers} 
+                            following={this.state.following} 
+                            tweetCount={this.state.tweetCount} 
+                            likeCount={this.state.likeCount} />
+    
+    var loadingImg = (this.state.isLoading)
+                  ?   <div>
+                        <img className="loading-sign" alt="Loading sign" src="./loading-sign.svg"/>
+                        <p>This can take up to 20 seconds</p>
+                      </div>
+                  : null;
     return (
       <div>
         <h1 className="header">Socializr</h1>
+        
+        {content}
+        
+        {loadingImg}
+
         <input id="twitter-user-js" placeholder="Enter your Twitter user name here" type="text" />
         <button onClick={this.usernameEntered}>Submit</button>
-        <Stats  followers={this.state.followers} 
-                following={this.state.following} 
-                tweetCount={this.state.tweetCount} 
-                likeCount={this.state.likeCount} />
+        
       </div>
     );
   }
