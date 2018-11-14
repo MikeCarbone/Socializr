@@ -6,6 +6,7 @@ class App extends Component {
   constructor(props){
     super(props);
     
+    //Initialize state
     this.state = {
       user: '',
       followers: '',
@@ -16,16 +17,19 @@ class App extends Component {
       isLoading: false,
       nameEntered: false
     };
-
+  
     this.usernameEntered = this.usernameEntered.bind(this);
   }
 
   componentWillMount(){
-    //Check local storage
+    
+    //Check local storage for past searches
     let history = window.localStorage;
     if (history.length <= 0){
       console.log('Empty history');
     } else {
+      
+      //Set current state to local storage values if its not empty
       this.setState({
         user: history.user,
         followers: history.followers,
@@ -38,14 +42,19 @@ class App extends Component {
       });
     }
   }
-
+  
+  //Function called when submit is hit
   usernameEntered(){
     let username = document.getElementById("twitter-user-js").value;
+    
+    //Store entered username to local state
+    //Trigger loading animations and other functions with isLoading
     this.setState({
       isLoading: true,
       user: username
     });
-
+    
+    //Called on HTTP request readystatechange event
     const readyStateCallback = (req) => {
       if (req.readyState === 4) {
             var responseObject = JSON.parse(req.responseText);
@@ -60,23 +69,25 @@ class App extends Component {
         return;
       }
     };
-
+    
+    //Called when results are ready, fetches new API that has results
     const fetchResults = (theURL) => {
         var Httpreq = new XMLHttpRequest();
             Httpreq.open("GET",theURL,false);
             Httpreq.send(null);
         
         let dataPayload = JSON.parse(Httpreq.responseText);
-        console.log(dataPayload);
         stateSetter(dataPayload);
         
         return editLocalHistory(this.state);
     };
-
+    
+    //Long poller that is called if results arent immediately ready
+    //This will usually be called b/c API has to download Twitter webpage
     const poller = (requestId) => {
         console.log('Original poll still runnning, executing long poller');
         
-        //Giving the API time to create response, keep checking
+        //Intermittently check to see if requests' results are ready
         setTimeout(function(){
           var request = new XMLHttpRequest();
               request.open('GET', `https://api.apify.com/v1/execs/${requestId}`);
@@ -84,7 +95,8 @@ class App extends Component {
               request.send();
       }, 1000);
     };
-
+    
+    //Updates state to reflect new response data
     const stateSetter = (data) => {
       return this.setState({
         followers: data[0].pageFunctionResult[3],
@@ -96,15 +108,18 @@ class App extends Component {
         isLoading: false
       });
     }
-
+    
+    //Resets local storage to match most recent search
     const editLocalHistory = (states) => {
       Object.keys(states).forEach((key) =>{
           localStorage.setItem(key, states[key]);
       });
     }
 
-    //Validate field content
+    //Validate field content isnt empty
     if (username){
+
+      //Parameters to POST with request
       var body = {
         '_id': 'yxCYAw3hon6qnebkN',
         'startUrls':[{
@@ -112,7 +127,8 @@ class App extends Component {
             'value': `https://twitter.com/${username}`
         }]
       };
-
+      
+      //First request to the API
       var request = new XMLHttpRequest();
           request.open('POST', 'https://api.apify.com/v1/F6zg3S4YnudDgw5xe/crawlers/yxCYAw3hon6qnebkN/execute?token=xSCGuWqoaXFFmfzrvNH9zW43L');
           request.setRequestHeader('Content-Type', 'application/json');
@@ -120,8 +136,7 @@ class App extends Component {
           request.send(JSON.stringify(body));
   
     } else {
-      //Please enter a username!
-      console.log('nothin');
+      console.log('Please enter a valid username');
     }
   }
 
@@ -149,7 +164,7 @@ class App extends Component {
         <h1 className="header">Socializr</h1>
         
         {content}
-        
+
         {loadingImg}
 
         <input id="twitter-user-js" placeholder="Enter your Twitter user name here" type="text" />
