@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+prototype/
 
 # testing
 /coverage
@@ -22,3 +23,6 @@ yarn-error.log*
 
 *.svg
 *.png
+.env
+*.jpg
+*.jpeg

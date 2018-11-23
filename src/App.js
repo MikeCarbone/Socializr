@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
-import Stats from './components/Stats';
+import Intro from './components/Intro';
+import UserSelect from './components/UserSelect';
 import './App.css';
+
+let options = document.getElementsByClassName("social-option");
 
 class App extends Component {
   constructor(props){
@@ -15,10 +18,19 @@ class App extends Component {
       likeCount: '',
       isEmpty: true,
       isLoading: false,
-      nameEntered: false
+      nameEntered: false,
+      twitterData: [],
+      instagramData: [],
+      socialStatus: '',
+      isIntroActive: true,
+      isSetUsersActive: false,
+      whichSocial: '',
+      payloads: []
     };
-  
-    this.usernameEntered = this.usernameEntered.bind(this);
+    
+    this.platformHandler = this.platformHandler.bind(this);
+    this.usernamesEntered = this.usernamesEntered.bind(this);
+    this.userHandler = this.userHandler.bind(this);
   }
 
   componentWillMount(){
@@ -30,29 +42,42 @@ class App extends Component {
     } else {
       
       //Set current state to local storage values if its not empty
-      this.setState({
-        user: history.user,
-        followers: history.followers,
-        following: history.following,
-        tweetCount: history.tweetCount,
-        likeCount: history.likeCount,
-        avatar: history.avatar,
-        isEmpty: JSON.parse(history.isEmpty),
-        isLoading: JSON.parse(history.isLoading)
-      });
+      try{
+        this.setState({
+          user: history.user,
+          followers: history.followers,
+          following: history.following,
+          tweetCount: history.tweetCount,
+          likeCount: history.likeCount,
+          avatar: history.avatar,
+          isEmpty: JSON.parse(history.isEmpty),
+          isLoading: JSON.parse(history.isLoading)
+        });
+      } catch(error) {
+        console.log(error);
+      }
     }
+  }
+
+  userHandler(){    
+    let user1 = document.getElementById("user1-js").value;
+    let user2 = document.getElementById("user2-js").value;
+    
+    this.usernamesEntered(user1);
+    this.usernamesEntered(user2);
+    return;
   }
   
   //Function called when submit is hit
-  usernameEntered(){
-    let username = document.getElementById("twitter-user-js").value;
-    
+  usernamesEntered(username){
+    var username = username;
+    console.log(`Beginning parse of ${username}`);
     //Store entered username to local state
     //Trigger loading animations and other functions with isLoading
-    this.setState({
-      isLoading: true,
-      user: username
-    });
+    // this.setState({
+    //   isLoading: true,
+    //   user: username
+    // });
     
     //Called on HTTP request readystatechange event
     const readyStateCallback = (req) => {
@@ -75,11 +100,8 @@ class App extends Component {
         var Httpreq = new XMLHttpRequest();
             Httpreq.open("GET",theURL,false);
             Httpreq.send(null);
-        
-        let dataPayload = JSON.parse(Httpreq.responseText);
-        stateSetter(dataPayload);
-        
-        return editLocalHistory(this.state);
+
+        return endingProcesses(Httpreq.responseText);
     };
     
     //Long poller that is called if results arent immediately ready
@@ -105,28 +127,44 @@ class App extends Component {
         likeCount: data[0].pageFunctionResult[4],
         avatar: data[0].pageFunctionResult[0],
         isEmpty: false,
-        isLoading: false
+        isLoading: false,
       });
-    }
+    };
     
     //Resets local storage to match most recent search
     const editLocalHistory = (states) => {
       Object.keys(states).forEach((key) =>{
           localStorage.setItem(key, states[key]);
       });
-    }
+    };
+
+    const endingProcesses = (data) => {
+      console.log(`Finished parsing ${username}, data: ${data}`);
+        let payloadArr = this.state.payload || [];
+            payloadArr.push(data);
+        
+        this.setState({
+            payloads: payloadArr
+        });
+        
+        //editLocalHistory(this.state);
+
+        return;
+    };
 
     //Validate field content isnt empty
     if (username){
-
+      let searchURL = `https://${this.state.whichSocial}.com/${username}`;
       //Parameters to POST with request
       var body = {
         '_id': 'yxCYAw3hon6qnebkN',
         'startUrls':[{
             'key': 'START',
-            'value': `https://twitter.com/${username}`
+            'value': searchURL
         }]
       };
+
+      console.log(`Hitting ${searchURL}`);
       
       //First request to the API
       var request = new XMLHttpRequest();
@@ -140,36 +178,44 @@ class App extends Component {
     }
   }
 
-  render() {
-    var content = (this.state.isEmpty)
-                  ?  <div>
-                        <h2 className="placeholder-text">Please enter your Twitter handle to get started!</h2>
-                        <img className="placeholder-img" alt="Phone" src="./social-bg.png"/>
-                    </div>
-                  : <Stats  username={this.state.user} 
-                            pic={this.state.avatar} 
-                            followers={this.state.followers} 
-                            following={this.state.following} 
-                            tweetCount={this.state.tweetCount} 
-                            likeCount={this.state.likeCount} />
+  platformHandler(value) {
+    console.log(value);
+
+    let icons = Array(document.getElementsByClassName("social-options__icon"));
+
+    icons.forEach((el, index) => {
+        el[index].style.animation = '';
+    });
+
+    this.setState({
+        isSetUsersActive: true,
+        whichSocial: value
+    });
     
-    var loadingImg = (this.state.isLoading)
-                  ?   <div>
-                        <img className="loading-sign" alt="Loading sign" src="./loading-sign.svg"/>
-                        <p>This can take up to 20 seconds</p>
-                      </div>
+    //Wait for animation to finish then remove background
+    setTimeout(() => {
+      this.setState({
+        isIntroActive: false
+      });
+    }, 4000);
+    
+  }
+
+  render() {
+    var introContent = (this.state.isIntroActive)
+                  ? <Intro clickHandler={this.platformHandler} />
+                  //Replaces resource heavy intro with lightweight div
+                  //Otherwise screen would be blank
                   : null;
+
+    var enterUserScreen = (this.state.isSetUsersActive)
+                  ? <UserSelect clickHandler={this.userHandler} whichSocial={this.state.whichSocial} isActive = {this.state.isSetUsersActive} />
+                  : null;
+    
     return (
       <div>
-        <h1 className="header">Socializr</h1>
-        
-        {content}
-
-        {loadingImg}
-
-        <input id="twitter-user-js" placeholder="Enter your Twitter user name here" type="text" />
-        <button onClick={this.usernameEntered}>Submit</button>
-        
+        { introContent }
+        { enterUserScreen }
       </div>
     );
   }
