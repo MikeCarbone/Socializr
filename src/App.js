@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Intro from './components/Intro';
 import UserSelect from './components/UserSelect';
+import Results from './components/Results';
 import './App.css';
 
 let options = document.getElementsByClassName("social-option");
@@ -12,18 +13,14 @@ class App extends Component {
     //Initialize state
     this.state = {
       user: '',
-      followers: '',
-      following: '',
-      tweetCount: '',
-      likeCount: '',
       isEmpty: true,
       isLoading: false,
       nameEntered: false,
       twitterData: [],
-      instagramData: [],
       socialStatus: '',
       isIntroActive: true,
       isSetUsersActive: false,
+      isResultsActive: false,
       whichSocial: '',
       payloads: []
     };
@@ -36,27 +33,27 @@ class App extends Component {
   componentWillMount(){
     
     //Check local storage for past searches
-    let history = window.localStorage;
-    if (history.length <= 0){
-      console.log('Empty history');
-    } else {
+    // let history = window.localStorage;
+    // if (history.length <= 0){
+    //   console.log('Empty history');
+    // } else {
       
-      //Set current state to local storage values if its not empty
-      try{
-        this.setState({
-          user: history.user,
-          followers: history.followers,
-          following: history.following,
-          tweetCount: history.tweetCount,
-          likeCount: history.likeCount,
-          avatar: history.avatar,
-          isEmpty: JSON.parse(history.isEmpty),
-          isLoading: JSON.parse(history.isLoading)
-        });
-      } catch(error) {
-        console.log(error);
-      }
-    }
+    //   //Set current state to local storage values if its not empty
+    //   try{
+    //     this.setState({
+    //       user: history.user,
+    //       followers: history.followers,
+    //       following: history.following,
+    //       tweetCount: history.tweetCount,
+    //       likeCount: history.likeCount,
+    //       avatar: history.avatar,
+    //       isEmpty: JSON.parse(history.isEmpty),
+    //       isLoading: JSON.parse(history.isLoading)
+    //     });
+    //   } catch(error) {
+    //     console.log(error);
+    //   }
+    //}
   }
 
   userHandler(){    
@@ -65,6 +62,11 @@ class App extends Component {
     
     this.usernamesEntered(user1);
     this.usernamesEntered(user2);
+
+    this.setState({
+      isLoading: true
+    });
+
     return;
   }
   
@@ -115,7 +117,7 @@ class App extends Component {
               request.open('GET', `https://api.apify.com/v1/execs/${requestId}`);
               request.onreadystatechange = function(){ readyStateCallback(this)};
               request.send();
-      }, 1000);
+      }, 5000);
     };
     
     //Updates state to reflect new response data
@@ -139,13 +141,22 @@ class App extends Component {
     };
 
     const endingProcesses = (data) => {
-      console.log(`Finished parsing ${username}, data: ${data}`);
-        let payloadArr = this.state.payload || [];
+      console.log(`Finished parsing ${username}`);
+        let payloadArr = this.state.payloads || [];
             payloadArr.push(data);
         
         this.setState({
-            payloads: payloadArr
+            payloads: payloadArr,
         });
+
+        if (payloadArr.length >= 2){
+          console.log('DONE!');
+          console.log(JSON.parse(payloadArr[0]));
+          this.setState({
+            isSetUsersActive: false,
+            isResultsActive: true
+          });
+        }
         
         //editLocalHistory(this.state);
 
@@ -202,18 +213,26 @@ class App extends Component {
   }
 
   render() {
+    //Remove render heavy DOM content after no longer visible
     var introContent = (this.state.isIntroActive)
                   ? <Intro clickHandler={this.platformHandler} />
-                  //Replaces resource heavy intro with lightweight div
-                  //Otherwise screen would be blank
+                  : null;
+    
+    console.log(`Render isLoading: ${this.state.isLoading}`);
+    var enterUserScreen = (this.state.isSetUsersActive)
+                  ? <UserSelect isLoading={this.state.isLoading} clickHandler={this.userHandler} whichSocial={this.state.whichSocial} isActive = {this.state.isSetUsersActive} />
                   : null;
 
-    var enterUserScreen = (this.state.isSetUsersActive)
-                  ? <UserSelect clickHandler={this.userHandler} whichSocial={this.state.whichSocial} isActive = {this.state.isSetUsersActive} />
+    var resultsScreen = (this.state.isResultsActive)
+                  ? <Results data={this.state.payloads} />
                   : null;
     
     return (
       <div>
+        <div className="landscapeCheck">
+            <h2>Please rotate to portrait</h2>
+        </div>
+        { resultsScreen }
         { introContent }
         { enterUserScreen }
       </div>
