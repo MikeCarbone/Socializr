@@ -10,10 +10,7 @@ export default class Intro extends React.Component {
     let lastResult = localStorage.getItem('history') || null;
     
     if (lastResult != null){
-      console.log('Last result: ', lastResult);
-      console.log('Last result JSON?: ', JSON.parse(lastResult));
       lastResult = JSON.parse(lastResult);
-      console.log('Now plain: ', lastResult);
       var historyEl = 
                 <div className="previous">
                     <h3>Last winner:</h3>

@@ -1,24 +1,11 @@
 import React from 'react';
 
 export default class UserSelect extends React.Component {
-  constructor(props){
-    super(props);
-  }
-
   render(){
-    // let whichSocial = this.props.whichSocial
-    //                   .charAt(0).toUpperCase() + 
-    //                   this.props.whichSocial.slice(1);
-    
-    console.log("isLoading: ", this.props.isLoading);
 
     if (this.props.isLoading){
       document.getElementById("vs-js").style.animation = "rotate .25s linear infinite";
-    } else {
     }
-    // let vsText = (this.props.isLoading)
-    //             ? <h1 id="vs-js" className="rotate">VS</h1>
-    //             : <h1 id="vs-js">VS</h1>;
 
     var content = (this.props.isActive)
                 ? <section className="cont shake-slow">

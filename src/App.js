@@ -4,8 +4,6 @@ import UserSelect from './components/UserSelect';
 import Results from './components/Results';
 import './App.css';
 
-let options = document.getElementsByClassName("social-option");
-
 class App extends Component {
   constructor(props){
     super(props);
@@ -30,32 +28,6 @@ class App extends Component {
     this.userHandler = this.userHandler.bind(this);
   }
 
-  componentWillMount(){
-    
-    //Check local storage for past searches
-    // let history = window.localStorage;
-    // if (history.length <= 0){
-    //   console.log('Empty history');
-    // } else {
-      
-    //   //Set current state to local storage values if its not empty
-    //   try{
-    //     this.setState({
-    //       user: history.user,
-    //       followers: history.followers,
-    //       following: history.following,
-    //       tweetCount: history.tweetCount,
-    //       likeCount: history.likeCount,
-    //       avatar: history.avatar,
-    //       isEmpty: JSON.parse(history.isEmpty),
-    //       isLoading: JSON.parse(history.isLoading)
-    //     });
-    //   } catch(error) {
-    //     console.log(error);
-    //   }
-    //}
-  }
-
   userHandler(){    
     let user1 = document.getElementById("user1-js").value;
     let user2 = document.getElementById("user2-js").value;
@@ -74,12 +46,6 @@ class App extends Component {
   usernamesEntered(username){
     var username = username;
     console.log(`Beginning parse of ${username}`);
-    //Store entered username to local state
-    //Trigger loading animations and other functions with isLoading
-    // this.setState({
-    //   isLoading: true,
-    //   user: username
-    // });
     
     //Called on HTTP request readystatechange event
     const readyStateCallback = (req) => {
@@ -118,26 +84,6 @@ class App extends Component {
               request.onreadystatechange = function(){ readyStateCallback(this)};
               request.send();
       }, 5000);
-    };
-    
-    //Updates state to reflect new response data
-    const stateSetter = (data) => {
-      return this.setState({
-        followers: data[0].pageFunctionResult[3],
-        following: data[0].pageFunctionResult[2],
-        tweetCount: data[0].pageFunctionResult[1],
-        likeCount: data[0].pageFunctionResult[4],
-        avatar: data[0].pageFunctionResult[0],
-        isEmpty: false,
-        isLoading: false,
-      });
-    };
-    
-    //Resets local storage to match most recent search
-    const editLocalHistory = (states) => {
-      Object.keys(states).forEach((key) =>{
-          localStorage.setItem(key, states[key]);
-      });
     };
 
     const endingProcesses = (data) => {
